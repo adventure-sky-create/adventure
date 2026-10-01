@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>STELLAR TANK FRONTLINE</title>
+  <link rel="stylesheet" href="style.css?v=4">
+</head>
+<body>
+  <div id="game-container">
+    <canvas id="game-canvas" width="1200" height="800"></canvas>
+    
+    <!-- Main Menu Overlay -->
+    <div id="main-menu" class="overlay active">
+      <div class="menu-container">
+        <h1 class="game-title">STELLAR TANK FRONTLINE</h1>
+        <p class="subtitle">深空坦克前线</p>
+        
+        <div class="mode-select">
+          <div class="mode-card" data-mode="story">
+            <div class="mode-icon">🟢</div>
+            <h3>剧情模式</h3>
+            <p>20 关通关 · 3 武器槽</p>
+          </div>
+          <div class="mode-card" data-mode="endless">
+            <div class="mode-icon">🔴</div>
+            <h3>无尽模式</h3>
+            <p>无限关卡 · 追求极限</p>
+          </div>
+          <div class="mode-card" data-mode="creative">
+            <div class="mode-icon">🟡</div>
+            <h3>创造模式</h3>
+            <p>自由搭配 · 连续战斗</p>
+          </div>
+        </div>
+        
+        <div class="menu-actions">
+          <button id="how-to-play" class="btn-secondary">操作说明</button>
+          <button id="codex-btn" class="btn-secondary">图鉴</button>
+          <button id="score-btn" class="btn-secondary">最近战绩</button>
+        </div>
+        
+        <p class="mode-desc" id="mode-desc">选择一种模式开始游戏</p>
+      </div>
+    </div>
+    
+    <!-- 图鉴 Overlay -->
+    <div id="codex-overlay" class="overlay hidden">
+      <div class="codex-container">
+        <div class="codex-top">
+          <h2 class="codex-title">图鉴</h2>
+          <button id="codex-close" class="btn-secondary codex-close">✕</button>
+        </div>
+        <div class="codex-tabs">
+          <button class="codex-tab active" data-tab="weapon">武器图鉴</button>
+          <button class="codex-tab" data-tab="enemy">敌人图鉴</button>
+        </div>
+        <div class="codex-body">
+          <div id="codex-left" class="codex-panel active">
+            <div id="codex-weapon-list" class="codex-list"></div>
+          </div>
+          <div id="codex-right" class="codex-panel">
+            <div id="codex-enemy-list" class="codex-list"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- HUD Layer -->
+    <div id="hud" class="hidden">
+      <!-- Left Panel -->
+      <div class="hud-panel left-panel">
+        <div class="hud-row">
+          <span class="hud-label">❤ HP</span>
+          <div class="hp-bar"><div id="hp-fill"></div></div>
+          <span id="hp-text" class="hp-text">5/5</span>
+        </div>
+        <div class="hud-row">
+          <span class="hud-label">🛡 SHIELD</span>
+          <span id="shield-count">0</span>
+        </div>
+        <div class="hud-row" id="nuke-row">
+          <span class="hud-label">🔴 NUKE</span>
+          <span id="nuke-status" class="nuke-empty">[Q] 空</span>
+        </div>
+        <div class="weapon-section">
+          <div class="weapon-title">主炮</div>
+          <div class="weapon-item main" id="main-weapon-display">
+            <span class="weapon-icon" id="main-icon">⚡</span>
+            <span class="weapon-name" id="main-name">CANNON</span>
+            <span class="weapon-tag">◀ 手动</span>
+          </div>
+          <div class="weapon-levels" id="main-levels"></div>
+        </div>
+        <div class="weapon-section">
+          <div class="weapon-title">副武器 <span id="sub-count">0</span>/<span id="sub-max">3</span></div>
+          <div id="sub-weapons" class="weapon-list"></div>
+        </div>
+        <div class="weapon-section">
+          <div class="weapon-title">独立武器</div>
+          <div id="indep-weapons" class="weapon-list"></div>
+        </div>
+      </div>
+      
+      <!-- Boss Health Bar -->
+      <div id="boss-bar" class="hidden">
+        <div class="boss-name" id="boss-name">BOSS</div>
+        <div class="boss-hp-bar"><div id="boss-hp-fill"></div></div>
+      </div>
+      
+      <!-- Right Panel -->
+      <div class="hud-panel right-panel">
+        <div class="hud-stat">
+          <span class="stat-label">SCORE</span>
+          <span class="stat-value" id="score">0</span>
+        </div>
+        <div class="hud-stat" id="level-row">
+          <span class="stat-label">LV</span>
+          <span class="stat-value" id="level">1</span>
+          <span class="stat-sub">KILL</span>
+          <span class="stat-value" id="kill-count">0</span>
+        </div>
+        <!-- 关卡进度条（怪物潮/防守关） -->
+        <div class="level-progress-row" id="level-progress-row" style="display:none;">
+          <div class="lp-label" id="lp-label">进度</div>
+          <div class="lp-bar"><div id="lp-fill"></div></div>
+          <div class="lp-text" id="lp-text">0/0</div>
+        </div>
+        <div class="hud-stat" id="wave-row" style="display:none;">
+          <span class="stat-label">WAVE</span>
+          <span class="stat-value" id="wave">1</span>
+          <span class="stat-sub">生存</span>
+          <span class="stat-value" id="survival">00:00</span>
+        </div>
+        <div class="synergy-row" id="synergy-row"></div>
+        <div class="hud-stat" id="highscore-row" style="display:none;">
+          <span class="stat-label">最高</span>
+          <span class="stat-value" id="highscore">0</span>
+        </div>
+        <button id="settings-btn" class="btn-exit">⚙ 设置</button>
+      </div>
+    </div>
+    
+    <!-- Upgrade Card Overlay -->
+    <div id="upgrade-overlay" class="overlay hidden">
+      <div class="upgrade-container">
+        <h2 class="upgrade-title">强化选择 <span id="upgrade-round">1</span>/2</h2>
+        <div class="card-row" id="upgrade-cards"></div>
+      </div>
+    </div>
+    
+    <!-- Weapon Unlock Overlay -->
+    <div id="weapon-overlay" class="overlay hidden">
+      <div class="upgrade-container">
+        <h2 class="upgrade-title">武器解锁</h2>
+        <div class="card-row" id="weapon-cards"></div>
+        <div class="current-weapons">
+          <span>当前装备：</span>
+          <span id="current-weapons-list"></span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Creative Setup Overlay -->
+    <div id="creative-setup" class="overlay hidden">
+      <div class="upgrade-container wide">
+        <div class="overlay-header">
+          <h2 class="upgrade-title">创造模式 · 开局配置</h2>
+          <button class="btn-exit small" id="creative-exit">✕ 退出</button>
+        </div>
+        <div class="setup-section" id="creative-step1">
+          <h3>Step 1: 选择武器装备</h3>
+          <div class="weapon-select-block">
+            <div class="weapon-select-label">主炮 (手动发射，必选1把)</div>
+            <div class="weapon-pool-grid main-pool" id="main-weapon-pool"></div>
+            <div class="selected-main" id="selected-main">未选择</div>
+          </div>
+          <div class="weapon-select-block">
+            <div class="weapon-select-label">副武器 (自动发射，可选最多2把)</div>
+            <div class="weapon-pool-grid sub-pool" id="sub-weapon-pool"></div>
+            <div class="selected-subs" id="selected-subs">未选择</div>
+          </div>
+          <button id="creative-next" class="btn-primary hidden">下一步：强化选择</button>
+        </div>
+        <div class="setup-section hidden" id="creative-step2">
+          <h3>Step 2: 强化选择 (已选 <span id="upgrade-progress">0</span>/30，可随时开始战斗)</h3>
+          <div id="creative-upgrade-groups" class="scrollable-area"></div>
+          <div class="creative-battle-bar">
+            <span class="battle-progress">已选强化: <span id="battle-upgrade-count">0</span>/30</span>
+            <button id="start-creative" class="btn-primary">⚔ 开始战斗</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Pause Overlay -->
+    <div id="pause-overlay" class="overlay hidden">
+      <div class="menu-container">
+        <h2 class="game-title small">PAUSED</h2>
+        <button id="resume-btn" class="btn-primary">继续游戏</button>
+        <button id="pause-restart-btn" class="btn-secondary">重新开始</button>
+        <button id="pause-menu-btn" class="btn-secondary">返回菜单</button>
+        <div class="pause-settings">
+          <div class="pickup-range-control">
+            <span class="stat-label">拾取范围</span>
+            <input type="range" id="pause-pickup-range-slider" min="0.5" max="3" step="0.1" value="1" class="range-slider">
+            <span id="pause-pickup-range-value" class="stat-value">1.0x</span>
+          </div>
+          <div class="pause-sound-controls">
+            <div class="sound-control">
+              <span class="stat-label">🎵 音乐</span>
+              <label class="toggle-switch">
+                <input type="checkbox" id="pause-music-toggle" data-music-toggle checked>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="sound-control">
+              <span class="stat-label">🔊 音效</span>
+              <label class="toggle-switch">
+                <input type="checkbox" id="pause-sfx-toggle" data-sfx-toggle checked>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Game Over Overlay -->
+    <div id="game-over-overlay" class="overlay hidden">
+      <div class="menu-container">
+        <h2 class="game-title small" id="game-over-title">GAME OVER</h2>
+        <div class="stats-box" id="game-over-stats"></div>
+        <button id="retry-btn" class="btn-primary">重新开始</button>
+        <button id="menu-btn" class="btn-secondary">返回菜单</button>
+      </div>
+    </div>
+    
+    <!-- Victory Overlay -->
+    <div id="victory-overlay" class="overlay hidden">
+      <div class="menu-container">
+        <h2 class="game-title small">VICTORY</h2>
+        <p class="subtitle">恭喜通关！</p>
+        <div class="stats-box" id="victory-stats"></div>
+        <button id="victory-menu-btn" class="btn-primary">返回菜单</button>
+      </div>
+    </div>
+    
+    <!-- How To Play Overlay -->
+    <div id="howto-overlay" class="overlay hidden">
+      <div class="menu-container wide-container">
+        <h2 class="game-title small">操作说明</h2>
+        <div class="howto-grid">
+          <div class="howto-item"><kbd>W A S D</kbd><span>移动</span></div>
+          <div class="howto-item"><kbd>鼠标</kbd><span>瞄准</span></div>
+          <div class="howto-item"><kbd>左键</kbd><span>主炮射击</span></div>
+          <div class="howto-item"><kbd>空格</kbd><span>闪避（短暂无敌）</span></div>
+          <div class="howto-item"><kbd>R</kbd><span>部署地雷</span></div>
+          <div class="howto-item"><kbd>E</kbd><span>释放大招</span></div>
+          <div class="howto-item"><kbd>Q</kbd><span>使用核弹</span></div>
+          <div class="howto-item"><kbd>ESC</kbd><span>暂停</span></div>
+        </div>
+        <p class="subtitle">副武器自动开火，无需操作</p>
+        <div class="howto-secret">
+          <input type="text" id="secret-input" maxlength="16" placeholder="输入解锁代码..." autocomplete="off" />
+          <button id="secret-submit" class="btn-secondary">确定</button>
+        </div>
+        <!-- 隐藏设置界面 -->
+        <div id="secret-panel" class="hidden">
+          <div class="secret-title">⚙ 隐藏设置</div>
+          <div class="secret-row">
+            <span>无敌模式</span>
+            <label class="switch"><input type="checkbox" id="secret-invincible"><i></i></label>
+          </div>
+        </div>
+        <button id="howto-close" class="btn-secondary">返回</button>
+      </div>
+    </div>
+    
+    <!-- Score Overlay -->
+    <div id="score-overlay" class="overlay hidden">
+      <div class="menu-container wide-container">
+        <h2 class="game-title small">最近战绩</h2>
+        <div class="score-board">
+          <div id="recent-scores" class="score-list">
+            <span class="score-empty">暂无记录</span>
+          </div>
+        </div>
+        <button id="score-close" class="btn-secondary">返回</button>
+      </div>
+    </div>
+    
+    <!-- Settings Overlay -->
+    <div id="settings-overlay" class="overlay hidden">
+      <div class="menu-container wide-container">
+        <h2 class="game-title small">设置</h2>
+        <div class="settings-section">
+          <div class="pause-sound-controls">
+            <div class="sound-control">
+              <span class="stat-label">🎵 音乐 (BGM)</span>
+              <label class="toggle-switch">
+                <input type="checkbox" id="settings-music-toggle" data-music-toggle checked>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="sound-control">
+              <span class="stat-label">🔊 音效</span>
+              <label class="toggle-switch">
+                <input type="checkbox" id="settings-sfx-toggle" data-sfx-toggle checked>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="settings-section" id="selected-upgrades-section">
+          <h3>已选强化卡</h3>
+          <div id="selected-upgrades-list" class="selected-upgrades"></div>
+        </div>
+        <button id="return-menu-btn" class="btn-primary">🏠 返回主界面</button>
+        <button id="settings-close" class="btn-secondary">继续游戏</button>
+      </div>
+    </div>
+    
+    <!-- Damage Flash -->
+    <div id="damage-flash"></div>
+    <div id="screen-shake"></div>
+  </div>
+  
+  <script src="game.js?v=19"></script>
+</body>
+</html>

@@ -1,0 +1,494 @@
+// game.js 可直接粘贴使用
+/**
+ * 绘制俯视几何坦克工具函数
+ * @param {CanvasRenderingContext2D} ctx canvas上下文
+ * @param {number} x 中心x
+ * @param {number} y 中心y
+ * @param {number} size 基础尺寸
+ * @param {number} rot 旋转弧度
+ * @param {string} fillColor 填充色
+ * @param {string} strokeColor 描边发光色
+ * @param {Function} drawBody 绘制本体回调
+ */
+function drawTankBase(ctx, x, y, size, rot, fillColor, strokeColor, drawBody) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rot);
+    ctx.fillStyle = fillColor;
+    ctx.strokeStyle = strokeColor;
+    ctx.lineWidth = 2;
+    drawBody(ctx, size);
+    ctx.restore();
+}
+
+// 1. 侦察兵 Scout ——小巧高速，洋红色
+function drawScoutTank(ctx, cx, cy, size, rotation = 0) {
+    drawTankBase(ctx, cx, cy, size, rotation, "#301028", "#ff2e88", (ctx, s) => {
+        //车体 瘦菱形
+        ctx.beginPath();
+        ctx.moveTo(-s*0.4, -s*0.35);
+        ctx.lineTo(s*0.4, -s*0.25);
+        ctx.lineTo(s*0.35, s*0.35);
+        ctx.lineTo(-s*0.38, s*0.28);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        //炮塔
+        ctx.beginPath();
+        ctx.arc(0,0,s*0.18,0,Math.PI*2);
+        ctx.fill();
+        ctx.stroke();
+        //短炮管
+        ctx.beginPath();
+        ctx.moveTo(s*0.18, 0);
+        ctx.lineTo(s*0.48, 0);
+        ctx.lineWidth = 3;
+        ctx.stroke();
+    })
+}
+
+// 2. 重甲兵 Heavy ——大块厚重，紫色
+function drawHeavyTank(ctx, cx, cy, size, rotation = 0) {
+    drawTankBase(ctx, cx, cy, size, rotation, "#281838", "#9b59b6", (ctx, s) => {
+        //宽大装甲车体
+        ctx.beginPath();
+        ctx.moveTo(-s*0.55, -s*0.48);
+        ctx.lineTo(s*0.58, -s*0.42);
+        ctx.lineTo(s*0.52, s*0.48);
+        ctx.lineTo(-s*0.58, s*0.44);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        //大炮塔
+        ctx.beginPath();
+        ctx.arc(0,0,s*0.28,0,Math.PI*2);
+        ctx.fill();
+        ctx.stroke();
+        //粗短炮管
+        ctx.beginPath();
+        ctx.moveTo(s*0.28, 0);
+        ctx.lineTo(s*0.62, 0);
+        ctx.lineWidth =5;
+        ctx.stroke();
+    })
+}
+
+//3. 狙击手 Sniper ——长管，橙黄色
+function drawSniperTank(ctx, cx, cy, size, rotation = 0) {
+    drawTankBase(ctx, cx, cy, size, rotation, "#332211", "#e67e22", (ctx, s) => {
+        ctx.beginPath();
+        ctx.moveTo(-s*0.42, -s*0.34);
+        ctx.lineTo(s*0.44, -s*0.30);
+        ctx.lineTo(s*0.40, s*0.34);
+        ctx.lineTo(-s*0.45, s*0.30);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        //中等炮塔
+        ctx.beginPath();
+        ctx.arc(0,0,s*0.20,0,Math.PI*2);
+        ctx.fill();
+        ctx.stroke();
+        //极长细炮管
+        ctx.beginPath();
+        ctx.moveTo(s*0.20, 0);
+        ctx.lineTo(s*0.95, 0);
+        ctx.lineWidth =2;
+        ctx.stroke();
+    })
+}
+
+//4. 自爆兵 Bomber ——圆胖短身，亮红色，无炮管
+function drawBomberTank(ctx, cx, cy, size, rotation =0){
+    drawTankBase(ctx, cx, cy, size, rotation, "#301212", "#ff3333", (ctx, s)=>{
+        ctx.beginPath();
+        ctx.moveTo(-s*0.48, -s*0.45);
+        ctx.lineTo(s*0.48, -s*0.40);
+        ctx.lineTo(s*0.44, s*0.45);
+        ctx.lineTo(-s*0.44, s*0.40);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        //爆炸核心圆形，没有炮
+        ctx.beginPath();
+        ctx.arc(0,0,s*0.24,0,Math.PI*2);
+        ctx.fill();
+        ctx.stroke();
+    })
+}
+
+//5. 散弹兵 Shotgun ——多根短炮，青绿色
+function drawShotgunTank(ctx, cx, cy, size, rotation=0){
+    drawTankBase(ctx, cx, cy, size, rotation, "#123028", "#22eeaa", (ctx, s)=>{
+        ctx.beginPath();
+        ctx.moveTo(-s*0.45, -s*0.38);
+        ctx.lineTo(s*0.46, -s*0.34);
+        ctx.lineTo(s*0.42, s*0.38);
+        ctx.lineTo(-s*0.42, s*0.34);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(0,0,s*0.22,0,Math.PI*2);
+        ctx.fill();
+        ctx.stroke();
+        //三根散弹短炮
+        ctx.lineWidth=3;
+        ctx.beginPath();ctx.moveTo(s*0.22,-s*0.14);ctx.lineTo(s*0.52,-s*0.22);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(s*0.22,0);ctx.lineTo(s*0.58,0);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(s*0.22,s*0.14);ctx.lineTo(s*0.52,s*0.22);ctx.stroke();
+    })
+}
+
+// ------------------------示例调用，放在你的render循环里测试------------------------
+/*
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+//每一帧渲染示例
+function render(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    drawScoutTank(ctx,120,120,40,0);
+    drawHeavyTank(ctx,300,120,50,0.2);
+    drawSniperTank(ctx,520,120,42,-0.15);
+    drawBomberTank(ctx,120,300,44,0);
+    drawShotgunTank(ctx,320,300,44,0.3);
+    requestAnimationFrame(render);
+}
+render();
+*/
+
+
+// ===================== Boss绘制函数 直接粘贴game.js =====================
+
+/**
+ * Boss1 铁壁哨兵 Iron Sentinel 第5关
+ * 四足机甲炮台，固定中央，旋转炮塔
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {number} cx 中心X
+ * @param {number} cy 中心Y
+ * @param {number} size 基准尺寸 推荐80
+ * @param {number} rot 炮塔旋转弧度
+ */
+function drawBoss_IronSentinel(ctx, cx, cy, size, rot) {
+    ctx.save();
+    ctx.translate(cx, cy);
+
+    //底座四足底盘
+    ctx.fillStyle = "#222640";
+    ctx.strokeStyle = "#00f0ff";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(-size*0.7, -size*0.5);
+    ctx.lineTo(size*0.7, -size*0.5);
+    ctx.lineTo(size*0.7, size*0.5);
+    ctx.lineTo(-size*0.7, size*0.5);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    //四条支撑腿
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-size*0.6,-size*0.45); ctx.lineTo(-size*0.85,-size*0.7);
+    ctx.moveTo(size*0.6,-size*0.45);  ctx.lineTo(size*0.85,-size*0.7);
+    ctx.moveTo(-size*0.6,size*0.45);  ctx.lineTo(-size*0.85,size*0.7);
+    ctx.moveTo(size*0.6,size*0.45);   ctx.lineTo(size*0.85,size*0.7);
+    ctx.stroke();
+
+    //旋转炮塔本体
+    ctx.save();
+    ctx.rotate(rot);
+    ctx.fillStyle="#1a2236";
+    ctx.strokeStyle="#ff2e88";
+    ctx.lineWidth=3;
+    ctx.beginPath();
+    ctx.arc(0,0,size*0.35,0,Math.PI*2);
+    ctx.fill();
+    ctx.stroke();
+
+    //多向炮管
+    ctx.lineWidth=4;
+    for(let i=0;i<6;i++){
+        const a = (i/6)*Math.PI*2;
+        ctx.beginPath();
+        ctx.moveTo(Math.cos(a)*size*0.35, Math.sin(a)*size*0.35);
+        ctx.lineTo(Math.cos(a)*size*0.65, Math.sin(a)*size*0.65);
+        ctx.stroke();
+    }
+    ctx.restore();
+
+    ctx.restore();
+}
+
+/**
+ * Boss2 裂空巡洋 Sky裂痕 第10关
+ * 悬浮飞行堡垒，椭圆轨道移动
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {number} cx
+ * @param {number} cy
+ * @param {number} size 推荐90
+ * @param {number} rot 整体旋转弧度
+ */
+function drawBoss_SkyRift(ctx, cx, cy, size, rot) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(rot);
+
+    ctx.fillStyle="#182038";
+    ctx.strokeStyle="#ffd700";
+    ctx.lineWidth=3;
+
+    //主体长菱形飞行舰体
+    ctx.beginPath();
+    ctx.moveTo(-size*0.9, 0);
+    ctx.lineTo(-size*0.35,-size*0.45);
+    ctx.lineTo(size*0.8, 0);
+    ctx.lineTo(-size*0.35, size*0.45);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    //两侧副炮阵列
+    ctx.lineWidth=2;
+    for(let s=1;s<=3;s++){
+        let off = s*0.18*size;
+        ctx.beginPath();
+        ctx.moveTo(off,-size*0.25); ctx.lineTo(off+size*0.22,-size*0.38);
+        ctx.moveTo(off, size*0.25); ctx.lineTo(off+size*0.22, size*0.38);
+        ctx.stroke();
+    }
+
+    //中央能量核心
+    ctx.fillStyle="#ff2e88";
+    ctx.beginPath();
+    ctx.arc(0,0,size*0.22,0,Math.PI*2);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.restore();
+}
+
+/**
+ * Boss3A 量子双子A（青色个体）
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {number} cx
+ * @param {number} cy
+ * @param {number} size 推荐70
+ * @param {number} rot 旋转弧度
+ */
+function drawBoss_QuantumTwinA(ctx, cx, cy, size, rot) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(rot);
+
+    ctx.fillStyle="#102c38";
+    ctx.strokeStyle="#00f0ff";
+    ctx.lineWidth=3;
+
+    //八边形量子躯体
+    ctx.beginPath();
+    for(let i=0;i<8;i++){
+        const a = (i/8)*Math.PI*2;
+        const px = Math.cos(a)*size*0.45;
+        const py = Math.sin(a)*size*0.45;
+        if(i===0) ctx.moveTo(px,py);
+        else ctx.lineTo(px,py);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    //炮塔炮管
+    ctx.lineWidth=3;
+    ctx.beginPath();
+    ctx.moveTo(size*0.25,0);
+    ctx.lineTo(size*0.65,0);
+    ctx.stroke();
+
+    //量子核心
+    ctx.fillStyle="#00f0ff";
+    ctx.beginPath();
+    ctx.arc(0,0,size*0.18,0,Math.PI*2);
+    ctx.fill();
+
+    ctx.restore();
+}
+
+/**
+ * Boss3B 量子双子B（紫色个体）
+ */
+function drawBoss_QuantumTwinB(ctx, cx, cy, size, rot) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(rot);
+
+    ctx.fillStyle="#281838";
+    ctx.strokeStyle="#a855f7";
+    ctx.lineWidth=3;
+
+    ctx.beginPath();
+    for(let i=0;i<8;i++){
+        const a = (i/8)*Math.PI*2;
+        const px = Math.cos(a)*size*0.45;
+        const py = Math.sin(a)*size*0.45;
+        if(i===0) ctx.moveTo(px,py);
+        else ctx.lineTo(px,py);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.lineWidth=3;
+    ctx.beginPath();
+    ctx.moveTo(size*0.25,0);
+    ctx.lineTo(size*0.65,0);
+    ctx.stroke();
+
+    ctx.fillStyle="#a855f7";
+    ctx.beginPath();
+    ctx.arc(0,0,size*0.18,0,Math.PI*2);
+    ctx.fill();
+
+    ctx.restore();
+}
+
+/**
+ * Boss4 终焉引擎 Doom Engine 第20关最终Boss
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {number} cx
+ * @param {number} cy
+ * @param {number} size 基准尺寸 推荐110
+ * @param {number} rot 整体旋转
+ * @param {number} phase 阶段 1|2|3
+ * @param {boolean} weakPointVisible 弱点核心是否闪烁显示(阶段3)
+ */
+function drawBoss_DoomEngine(ctx, cx, cy, size, rot, phase, weakPointVisible) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(rot);
+
+    ctx.fillStyle="#141828";
+    ctx.strokeStyle="#ff3b3b";
+    ctx.lineWidth=4;
+
+    //阶段1：巨型机甲主体
+    if(phase===1){
+        ctx.beginPath();
+        ctx.moveTo(-size*0.8,-size*0.7);
+        ctx.lineTo(size*0.8,-size*0.6);
+        ctx.lineTo(size*0.75,size*0.7);
+        ctx.lineTo(-size*0.85,size*0.65);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        //多组炮管
+        ctx.lineWidth=4;
+        for(let i=-2;i<=2;i++){
+            ctx.beginPath();
+            ctx.moveTo(size*0.3, i*size*0.22);
+            ctx.lineTo(size*0.75, i*size*0.22);
+            ctx.stroke();
+        }
+    }
+    //阶段2：展开飞行堡垒（外扩环结构）
+    else if(phase===2){
+        //外环
+        ctx.beginPath();
+        for(let i=0;i<12;i++){
+            const a=(i/12)*Math.PI*2;
+            const r = size*0.75;
+            const px=Math.cos(a)*r;
+            const py=Math.sin(a)*r;
+            if(i===0) ctx.moveTo(px,py);
+            else ctx.lineTo(px,py);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        //内层环
+        ctx.beginPath();
+        for(let i=0;i<12;i++){
+            const a=(i/12)*Math.PI*2;
+            const r = size*0.45;
+            const px=Math.cos(a)*r;
+            const py=Math.sin(a)*r;
+            if(i===0) ctx.moveTo(px,py);
+            else ctx.lineTo(px,py);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+    }
+    //阶段3：核心暴露形态
+    else if(phase===3){
+        //破碎外框
+        ctx.lineWidth=2;
+        for(let frag=0;frag<8;frag++){
+            const ang = (frag/8)*Math.PI*2;
+            const r1 = size*0.45;
+            const r2 = size*0.72;
+            ctx.beginPath();
+            ctx.moveTo(Math.cos(ang)*r1,Math.sin(ang)*r1);
+            ctx.lineTo(Math.cos(ang)*r2,Math.sin(ang)*r2);
+            ctx.stroke();
+        }
+    }
+
+    //弱点核心，阶段3才会闪烁显示
+    if(weakPointVisible && phase===3){
+        ctx.fillStyle="#ffd700";
+        ctx.strokeStyle="#ff2e88";
+        ctx.lineWidth=3;
+        ctx.beginPath();
+        ctx.arc(0,0,size*0.20,0,Math.PI*2);
+        ctx.fill();
+        ctx.stroke();
+    }else if(phase!==3){
+        //1、2阶段内置核心不高亮
+        ctx.fillStyle="#882233";
+        ctx.beginPath();
+        ctx.arc(0,0,size*0.18,0,Math.PI*2);
+        ctx.fill();
+    }
+
+    ctx.restore();
+}
+
+// ===================== 渲染调用示例（写在render里测试） =====================
+/*
+//Boss1
+drawBoss_IronSentinel(ctx, 200,200,80, 0.3);
+
+//Boss2
+drawBoss_SkyRift(ctx, 500,220,90,0.1);
+
+//量子双子 两个要同时绘制
+drawBoss_QuantumTwinA(ctx,180,420,70,0);
+drawBoss_QuantumTwinB(ctx,360,420,70,Math.PI/6);
+
+//终焉引擎 阶段1
+drawBoss_DoomEngine(ctx,620,400,110,0,1,false);
+//终焉引擎 阶段3 弱点闪烁开启
+//drawBoss_DoomEngine(ctx,620,400,110,0,3,true);
+*/
+
+drawBoss_QuantumTwinA(ctx, x1,y1,70, rotA);
+drawBoss_QuantumTwinB(ctx, x2,y2,70, rotB);
+
+//phase:1 /2 /3
+//weakPointVisible boolean，阶段3用来做弱点闪烁
+drawBoss_DoomEngine(ctx,cx,cy,110,rot,phase,weakPointVisible);
+
+//在Boss的render方法内
+render(ctx){
+    if(this.id ===1){
+        drawBoss_IronSentinel(ctx,this.x,this.y,80,this.phaseTimer);
+    }else if(this.id===2){
+        drawBoss_SkyRift(ctx,this.x,this.y,90,this.angle);
+    }else if(this.id===3){
+        //量子双子实例A、B分别调用
+    }else if(this.id===4){
+        drawBoss_DoomEngine(ctx,this.x,this.y,110,this.angle,this.phase,this.weakpointVisible);
+    }
+}
